@@ -1,16 +1,16 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { Avatar, Typography } from "@material-tailwind/react";
 import CountdownTimer from "@/widgets/countdowntimer/countdowntimer";
 import axios from "axios";
 import { ReactMic } from "react-mic";
 
 export function Home() {
+  let messagesRef = useRef([]);
   const [isloading, setIsloading] = useState(false);
   const [recording, setRecording] = useState(false);
   const [countTime, setCountTime] = useState(30);
   const [response, setResponse] = useState("");
   const [isSummarized, setIsSummarized] = useState(false);
-  const [messages, setMessages] = useState([]);
 
   useEffect(() => {
     if (countTime == 1) {
@@ -38,15 +38,16 @@ export function Home() {
 
     const formData = new FormData();
     formData.append("file", file);
-    formData.append("messages", JSON.stringify(messages));
+    formData.append("messages", JSON.stringify(messagesRef.current));
     setIsloading(true);
     axios
       .post(`${import.meta.env.VITE_API_BASED_URL}/message`, formData)
       .then((res) => {
         setIsSummarized(true);
         let list = JSON.parse(res.data.data);
+
+        messagesRef.current = [...list];
         setResponse(list[list.length - 1].content);
-        setMessages(list);
       })
       .catch((err) => {
         console.log(err);
@@ -87,15 +88,7 @@ export function Home() {
             setCountTime={setCountTime}
           />
         </div>
-        <ReactMic
-          record={recording}
-          className="sound-wave hidden"
-          onStop={onStop}
-          strokeColor="#000000"
-          backgroundColor="#FF4081"
-          visualSetting="sinewave"
-          visualSettingFillColor="#ffffff"
-        />
+        <ReactMic record={recording} className="hidden" onStop={onStop} />
       </div>
     </>
   );

@@ -37,6 +37,7 @@ exports.summarize = async (req, res) => {
 const getSummary = async (list) => {
   try {
     let msgs = [...list];
+    let array = [...list];
 
     msgs.unshift({ role: "system", content: process.env.SYSTEM_PROMPT });
 
@@ -44,11 +45,11 @@ const getSummary = async (list) => {
       messages: msgs,
       model: "gpt-4o",
     });
-    msgs.push({
+    array.push({
       role: "assistant",
       content: completion.choices[0].message.content,
     });
-    return JSON.stringify(msgs);
+    return JSON.stringify(array);
   } catch (err) {
     console.log(err);
   }
