@@ -10,6 +10,7 @@ export function Home() {
   const [countTime, setCountTime] = useState(30);
   const [response, setResponse] = useState("");
   const [isSummarized, setIsSummarized] = useState(false);
+  const [messages, setMessages] = useState([]);
 
   useEffect(() => {
     if (countTime == 1) {
@@ -37,15 +38,15 @@ export function Home() {
 
     const formData = new FormData();
     formData.append("file", file);
-    if (response != "") {
-      formData.append("original_text", response);
-    }
+    formData.append("messages", JSON.stringify(messages));
     setIsloading(true);
     axios
       .post(`${import.meta.env.VITE_API_BASED_URL}/message`, formData)
       .then((res) => {
         setIsSummarized(true);
-        setResponse(res.data.data);
+        let list = JSON.parse(res.data.data);
+        setResponse(list[list.length - 1].content);
+        setMessages(list);
       })
       .catch((err) => {
         console.log(err);

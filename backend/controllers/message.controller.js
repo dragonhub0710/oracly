@@ -12,7 +12,7 @@ const openai = new OpenAI({
 
 exports.summarize = async (req, res) => {
   try {
-    const { original_text } = req.body;
+    const { messages } = req.body;
     const file = req.file;
 
     const filePath = path.join(__dirname, "..", "uploads", file.filename);
@@ -20,7 +20,11 @@ exports.summarize = async (req, res) => {
     let transcription = "";
     transcription = await getTranscription(filePath);
 
-    let data = await getSummary(transcription, original_text);
+    let list = JSON.parse(messages);
+    if (transcription && transcription != "") {
+      list.push({ role: "user", content: transcription });
+    }
+    let data = await getSummary(list);
 
     res.status(200).json({ data });
     await unlinkAsync(filePath);
@@ -30,28 +34,21 @@ exports.summarize = async (req, res) => {
   }
 };
 
-const getSummary = async (transcription, original_text) => {
+const getSummary = async (list) => {
   try {
-    let msgs = [
-      {
-        role: "system",
-        content: process.env.SYSTEM_PROMPT,
-      },
-    ];
+    let msgs = [...list];
 
-    if (original_text && original_text != "") {
-      msgs.push({ role: "assistant", content: original_text });
-    }
-
-    if (transcription && transcription != "") {
-      msgs.push({ role: "user", content: transcription });
-    }
+    msgs.unshift({ role: "system", content: process.env.SYSTEM_PROMPT });
 
     const completion = await openai.chat.completions.create({
       messages: msgs,
       model: "gpt-4o",
     });
-    return completion.choices[0].message.content;
+    msgs.push({
+      role: "assistant",
+      content: completion.choices[0].message.content,
+    });
+    return JSON.stringify(msgs);
   } catch (err) {
     console.log(err);
   }
